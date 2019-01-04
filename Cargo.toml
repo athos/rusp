@@ -1,0 +1,6 @@
+[package]
+name = "rusp"
+version = "0.1.0"
+authors = ["Shogo Ohta <athos0220@gmail.com>"]
+
+[dependencies]
