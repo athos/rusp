@@ -1,13 +1,13 @@
 mod rusp;
 
-use rusp::object::{self, Object};
+use rusp::object;
 
 fn main() {
     let obj = object::cons(
         object::symbol("+"),
         object::cons(
-            Object::Number(1),
-            object::cons(Object::Number(2), Object::Nil)
+            object::number(1),
+            object::cons(object::number(2), object::nil)
         )
     );
     println!("{}", obj);

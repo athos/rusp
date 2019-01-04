@@ -41,6 +41,12 @@ impl fmt::Display for Object {
     }
 }
 
+pub const nil: Object = Object::Nil;
+
+pub fn number(num: i32) -> Object {
+    Object::Number(num)
+}
+
 pub fn symbol(name: &str) -> Object {
     Object::Symbol(name.to_string())
 }
