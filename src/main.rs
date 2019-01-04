@@ -7,7 +7,7 @@ fn main() {
         object::symbol("+"),
         object::cons(
             object::number(1),
-            object::cons(object::number(2), object::nil)
+            object::cons(object::number(2), object::NIL)
         )
     );
     println!("{}", obj);

@@ -34,14 +34,14 @@ impl fmt::Display for Object {
             Object::Symbol(ref sym) => write!(f, "{}", sym),
             Object::Cons { .. } => {
                 write!(f, "(");
-                write_list(f, self);
+                write_list(f, self)?;
                 write!(f, ")")
             }
         }
     }
 }
 
-pub const nil: Object = Object::Nil;
+pub const NIL: Object = Object::Nil;
 
 pub fn number(num: i32) -> Object {
     Object::Number(num)
