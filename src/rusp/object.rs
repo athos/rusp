@@ -41,8 +41,6 @@ impl fmt::Display for Object {
     }
 }
 
-pub const NIL: Object = Object::Nil;
-
 pub fn number(num: i32) -> Object {
     Object::Number(num)
 }
