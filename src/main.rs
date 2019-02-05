@@ -14,10 +14,10 @@ fn main() -> io::Result<()> {
     prompt()?;
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
-        let obj = reader::read_string(&line?).unwrap();
-        print!("{:?}\n", obj);
+        if let Some(obj) = reader::read_string(&line?) {
+            print!("{:?}\n", obj);
+        }
         prompt()?;
     }
-
     Ok(())
 }
