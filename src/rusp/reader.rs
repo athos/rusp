@@ -46,28 +46,54 @@ impl <I: Iterator<Item = char>> Reader<I> {
         self.peek = None;
     }
 
-    fn skip_whitespaces(&mut self) -> Option<char> {
-        loop {
-            if let x@Some(_) = self.peek_char() {
-                if !x.unwrap().is_whitespace() {
-                    return x
-                }
-                self.clear();
+    fn read_while(&mut self, mut f: impl FnMut(&char) -> bool) -> String {
+        let mut ret = String::new();
+        if let Some(c) = self.peek {
+            if !f(&c) {
+                self.peek = Some(c);
+                return ret;
+            }
+            ret.push(c);
+            self.clear();
+        }
+        for c in self.iter.by_ref() {
+            if f(&c) {
+                ret.push(c);
             } else {
-                return None
+                self.peek = Some(c);
+                break;
+            }
+        }
+        ret
+    }
+
+    fn drop_while(&mut self, mut f: impl FnMut(&char) -> bool) {
+        if let Some(c) = self.peek {
+            if !f(&c) {
+                return;
+            }
+        }
+        for c in self.iter.by_ref() {
+            if !f(&c) {
+                self.peek = Some(c);
+                break;
             }
         }
     }
 
-    fn read_while(&mut self, f: impl FnMut(&char) -> bool) -> String {
-        let c = self.peek_char().unwrap();
-        self.clear();
-        iter::once(c).chain((&mut self.iter).take_while(f)).collect::<String>()
+    fn skip_whitespaces(&mut self) -> Option<char> {
+        self.drop_while(|c| c.is_whitespace());
+        self.peek_char()
     }
 
     fn read_number(&mut self) -> Object {
+        let negative = self.peek.unwrap_or('0') == '-';
+        if negative {
+            self.clear();
+        }
         let ds = self.read_while(|c| c.is_digit(10));
-        Object::Number(ds.parse::<i32>().unwrap())
+        let num = ds.parse::<i32>().unwrap();
+        Object::Number(if negative { -num } else { num })
     }
 
     fn read_symbol(&mut self) -> Object {
@@ -116,16 +142,37 @@ impl<I: Iterator<Item = char>> Iterator for Reader<I> {
 }
 
 #[test]
+fn reader_internal_test() {
+    let mut reader = Reader::new("123abc".chars());
+    let s = reader.read_while(|c| c.is_digit(10));
+    assert_eq!(s, "123".to_string());
+    assert_eq!(reader.peek, Some('a'));
+
+    let mut reader = Reader::new("123abc".chars());
+    reader.drop_while(|c| c.is_digit(10));
+    assert_eq!(reader.iter.collect::<String>(), "bc".to_string());
+    assert_eq!(reader.peek, Some('a'));
+}
+
+#[test]
 fn reader_test() {
+    let mut reader = Reader::new("t".chars());
+    let v = reader.next().unwrap();
+    assert_eq!(Object::T, v);
+
+    let mut reader = Reader::new("nil".chars());
+    let v = reader.next().unwrap();
+    assert_eq!(Object::Nil, v);
+
     let mut reader = Reader::new("-123".chars());
     let v = reader.next().unwrap();
     assert_eq!(Object::Number(-123), v);
 
-    let mut reader = Reader::new("set!".chars());
+    let mut reader = Reader::new("hello-world!".chars());
     let v = reader.next().unwrap();
-    assert_eq!(Object::Symbol("set!".to_string()), v);
+    assert_eq!(Object::Symbol("hello-world!".to_string()), v);
 
-    let mut reader = Reader::new("(1 2 3 )".chars());
+    let mut reader = Reader::new("(1 2 3)".chars());
     let v = reader.next().unwrap();
     assert_eq!(v, Object::Cons {
         car: Box::new(Object::Number(1)),
