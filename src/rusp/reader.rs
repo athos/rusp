@@ -1,10 +1,9 @@
 use std::char;
 use std::error;
 use std::fmt;
-use std::iter;
 use rusp::object::Object;
 
-pub struct Reader<I: Iterator<Item = char>> {
+struct ReaderIterator<I: Iterator<Item = char>> {
     iter: I,
     peek: Option<char>
 }
@@ -26,9 +25,9 @@ impl error::Error for ReaderError {
     }
 }
 
-impl <I: Iterator<Item = char>> Reader<I> {
-    pub fn new(iter: I) -> Self {
-        Reader { iter, peek: None }
+impl <I: Iterator<Item = char>> ReaderIterator<I> {
+    fn new(iter: I) -> Self {
+        ReaderIterator { iter, peek: None }
     }
 
     fn next_char(&mut self) -> Option<char> {
@@ -129,7 +128,7 @@ impl <I: Iterator<Item = char>> Reader<I> {
     }
 }
 
-impl<I: Iterator<Item = char>> Iterator for Reader<I> {
+impl<I: Iterator<Item = char>> Iterator for ReaderIterator<I> {
     type Item = Object;
 
     fn next(&mut self) -> Option<Object> {
@@ -141,40 +140,36 @@ impl<I: Iterator<Item = char>> Iterator for Reader<I> {
     }
 }
 
+pub fn read<'a>(iter: impl 'a + Iterator<Item = char>) -> impl 'a + Iterator<Item = Object> {
+    ReaderIterator::new(iter)
+}
+
+pub fn read_string(str: &str) -> Option<Object> {
+    read(str.chars()).next()
+}
+
 #[test]
 fn reader_internal_test() {
-    let mut reader = Reader::new("123abc".chars());
-    let s = reader.read_while(|c| c.is_digit(10));
+    let mut r = ReaderIterator::new("123abc".chars());
+    let s = r.read_while(|c| c.is_digit(10));
     assert_eq!(s, "123".to_string());
-    assert_eq!(reader.peek, Some('a'));
+    assert_eq!(r.peek, Some('a'));
 
-    let mut reader = Reader::new("123abc".chars());
-    reader.drop_while(|c| c.is_digit(10));
-    assert_eq!(reader.iter.collect::<String>(), "bc".to_string());
-    assert_eq!(reader.peek, Some('a'));
+    let mut r = ReaderIterator::new("123abc".chars());
+    r.drop_while(|c| c.is_digit(10));
+    assert_eq!(r.iter.collect::<String>(), "bc".to_string());
+    assert_eq!(r.peek, Some('a'));
 }
 
 #[test]
 fn reader_test() {
-    let mut reader = Reader::new("t".chars());
-    let v = reader.next().unwrap();
-    assert_eq!(Object::T, v);
+    let read = |s| read_string(s).unwrap();
 
-    let mut reader = Reader::new("nil".chars());
-    let v = reader.next().unwrap();
-    assert_eq!(Object::Nil, v);
-
-    let mut reader = Reader::new("-123".chars());
-    let v = reader.next().unwrap();
-    assert_eq!(Object::Number(-123), v);
-
-    let mut reader = Reader::new("hello-world!".chars());
-    let v = reader.next().unwrap();
-    assert_eq!(Object::Symbol("hello-world!".to_string()), v);
-
-    let mut reader = Reader::new("(1 2 3)".chars());
-    let v = reader.next().unwrap();
-    assert_eq!(v, Object::Cons {
+    assert_eq!(read("t"), Object::T);
+    assert_eq!(read("nil"), Object::Nil);
+    assert_eq!(read("-123"), Object::Number(-123));
+    assert_eq!(read("hello-world!"), Object::Symbol("hello-world!".to_string()));
+    assert_eq!(read("(1 2 3)"), Object::Cons {
         car: Box::new(Object::Number(1)),
         cdr: Box::new(Object::Cons {
             car: Box::new(Object::Number(2)),
