@@ -1,14 +1,23 @@
 mod rusp;
 
-use rusp::object;
+use std::io::{self, BufRead, Write};
+use rusp::reader;
 
-fn main() {
-    let obj = object::cons(
-        object::symbol("+"),
-        object::cons(
-            object::number(1),
-            object::cons(object::number(2), object::NIL)
-        )
-    );
-    println!("{}", obj);
+fn prompt() -> io::Result<()> {
+    print!("> ");
+    io::stdout().flush()?;
+
+    Ok(())
+}
+
+fn main() -> io::Result<()> {
+    prompt()?;
+    let stdin = io::stdin();
+    for line in stdin.lock().lines() {
+        let obj = reader::read_string(&line?).unwrap();
+        print!("{:?}\n", obj);
+        prompt()?;
+    }
+
+    Ok(())
 }
