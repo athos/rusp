@@ -1,4 +1,4 @@
-mod rusp;
+extern crate rusp;
 
 use std::io::{self, BufRead, Write};
 use rusp::reader;
