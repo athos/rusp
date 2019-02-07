@@ -41,6 +41,11 @@ impl fmt::Display for Object {
     }
 }
 
+impl Object {
+    pub fn is_null(&self) -> bool {
+        *self == Object::Nil
+    }
+}
 pub fn number(num: i32) -> Object {
     Object::Number(num)
 }
@@ -51,11 +56,4 @@ pub fn symbol(name: &str) -> Object {
 
 pub fn cons(car: Object, cdr: Object) -> Object {
     Object::Cons { car: Box::new(car), cdr: Box::new(cdr) }
-}
-
-pub fn null(obj: Object) -> bool {
-    match obj {
-        Object::Nil => true,
-        _ => false
-    }
 }
