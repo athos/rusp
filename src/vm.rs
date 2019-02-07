@@ -1,23 +1,30 @@
-use crate::insns::Code;
+use std::collections::HashMap;
+use crate::insns::{Code, CodeAddr, Program};
 use crate::insns::Insn::{self, *};
 use crate::object::{self, Object};
 
+type Pc = usize;
 type Stack = Vec<Object>;
 type Env = Vec<Object>;
-type DumpEntry = (Stack, Env, Code);
-type Dump = Vec<DumpEntry>;
+enum DumpEntry<'a> {
+    Sel(&'a Code, Pc),
+    Ap(Stack, Env, &'a Code, Pc)
+}
+type Dump<'a> = Vec<DumpEntry<'a>>;
 
-pub struct Vm {
+pub struct Vm<'a> {
     stack: Stack,
     env: Env,
-    code: Code,
-    dump: Dump,
-    pc: usize
+    code: &'a Code,
+    dump: Dump<'a>,
+    pc: Pc,
+    program: &'a Program
 }
 
-impl Vm {
-    pub fn new(code: Code) -> Self {
-        Vm { stack: vec![], env: vec![], code: code, dump: vec![], pc: 0 }
+impl<'a> Vm<'a> {
+    pub fn new(program: &'a Program, entry_point: CodeAddr) -> Self {
+        let code = program.get(&entry_point).unwrap();
+        Vm { stack: vec![], env: vec![], code: code, dump: vec![], pc: 0, program }
     }
 
     fn fetch_insn(&self) -> Option<Insn> {
@@ -74,6 +81,28 @@ impl Vm {
                 Isub => self.arith_op(std::ops::Sub::sub),
                 Imul => self.arith_op(std::ops::Mul::mul),
                 Idiv => self.arith_op(std::ops::Div::div),
+                Isel(ct, cf) => {
+                    let c;
+                    if !self.pop().unwrap().is_null() {
+                        c = ct;
+                    } else {
+                        c = cf;
+                    }
+                    self.dump.push(DumpEntry::Sel(self.code, self.pc+1));
+                    self.code = self.program.get(&c).unwrap();
+                    self.pc = 0;
+                    continue;
+                },
+                Ijoin => {
+                    match self.dump.pop().unwrap() {
+                        DumpEntry::Sel(code, pc) => {
+                            self.code = code;
+                            self.pc = pc;
+                            continue;
+                        },
+                        _ => ()
+                    }
+                }
                 _ => break
             }
             self.pc += 1;
@@ -83,14 +112,24 @@ impl Vm {
 
 #[test]
 fn vm_test() {
-    let code = vec![
-        Ildc(Object::Number(1)),
-        Ildc(Object::Number(2)),
-        Iadd,
-        Ildc(Object::Number(3)),
-        Imul
-    ];
-    let mut vm = Vm::new(code);
+    let mut program: Program = vec![
+        (0, vec![
+            Ildc(Object::Nil),
+            Inull,
+            Isel(1, 2),
+            Ildc(Object::Number(3)),
+            Iadd
+        ]),
+        (1, vec![
+            Ildc(Object::Number(1)),
+            Ijoin
+        ]),
+        (2, vec![
+            Ildc(Object::Number(2)),
+            Ijoin
+        ])
+    ].iter().cloned().collect();
+    let mut vm = Vm::new(&program, 0);
     vm.run();
-    assert_eq!(vm.stack, vec![Object::Number(9)]);
+    assert_eq!(vm.stack, vec![Object::Number(4)]);
 }
