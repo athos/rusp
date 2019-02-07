@@ -1,6 +1,7 @@
 use std::fmt;
+use crate::insns::Code;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     Nil,
     T,
