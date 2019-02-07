@@ -43,10 +43,22 @@ impl fmt::Display for Object {
 }
 
 impl Object {
+    pub fn is_atom(&self) -> bool {
+        match self {
+            Object::Cons {..} | Object::Func {..} => false,
+            _ => true
+        }
+    }
+
     pub fn is_null(&self) -> bool {
         *self == Object::Nil
     }
 }
+
+pub fn from_bool(b: bool) -> Object {
+    if b { Object::T } else { Object::Nil }
+}
+
 pub fn number(num: i32) -> Object {
     Object::Number(num)
 }
