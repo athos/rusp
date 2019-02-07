@@ -36,6 +36,22 @@ impl Vm {
         self.stack.pop()
     }
 
+    fn arith_op(&mut self, op: impl Fn(i32, i32) -> i32) {
+        let x = self.pop().unwrap();
+        let y = self.pop().unwrap();
+        match x {
+            Object::Number(m) => {
+                match y {
+                    Object::Number(n) => {
+                        self.push(Object::Number(op(m, n)));
+                    },
+                    _ => ()
+                }
+            },
+            _ => ()
+        }
+    }
+
     pub fn run(&mut self) {
         while let Some(insn) = self.fetch_insn() {
             match insn {
@@ -54,6 +70,10 @@ impl Vm {
                     let y = self.pop().unwrap();
                     self.push(object::cons(x, y));
                 },
+                Iadd => self.arith_op(std::ops::Add::add),
+                Isub => self.arith_op(std::ops::Sub::sub),
+                Imul => self.arith_op(std::ops::Mul::mul),
+                Idiv => self.arith_op(std::ops::Div::div),
                 _ => break
             }
             self.pc += 1;
@@ -63,8 +83,14 @@ impl Vm {
 
 #[test]
 fn vm_test() {
-    let code = vec![Inil, Inil, Icons];
+    let code = vec![
+        Ildc(Object::Number(1)),
+        Ildc(Object::Number(2)),
+        Iadd,
+        Ildc(Object::Number(3)),
+        Imul
+    ];
     let mut vm = Vm::new(code);
     vm.run();
-    assert_eq!(vm.stack, vec![object::cons(Object::Nil, Object::Nil)]);
+    assert_eq!(vm.stack, vec![Object::Number(9)]);
 }
