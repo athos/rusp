@@ -1,7 +1,7 @@
 use std::char;
 use std::error;
 use std::fmt;
-use object::Object;
+use crate::object::Object;
 
 struct ReaderIterator<I: Iterator<Item = char>> {
     iter: I,
