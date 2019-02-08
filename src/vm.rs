@@ -121,7 +121,7 @@ impl<'a> Vm<'a> {
 
 #[test]
 fn vm_test() {
-    let mut program: Program = vec![
+    let program: Program = vec![
         (0, vec![
             Ildc(Object::Nil),
             Inull,
