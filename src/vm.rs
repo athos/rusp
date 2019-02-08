@@ -117,10 +117,10 @@ impl<'a> Vm<'a> {
                             self.pc = pc;
                             continue;
                         },
-                        _ => ()
+                        _ => unimplemented!()
                     }
                 }
-                _ => break
+                _ => unimplemented!()
             }
             self.pc += 1;
         }
