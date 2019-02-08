@@ -83,7 +83,7 @@ impl<'a> Vm<'a> {
                 Idiv => self.arith_op(std::ops::Div::div),
                 Isel(ct, cf) => {
                     let c;
-                    if !self.pop().unwrap().is_null() {
+                    if self.pop().unwrap().to_bool() {
                         c = ct;
                     } else {
                         c = cf;

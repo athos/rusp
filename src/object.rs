@@ -53,6 +53,10 @@ impl Object {
     pub fn is_null(&self) -> bool {
         *self == Object::Nil
     }
+
+    pub fn to_bool(&self) -> bool {
+        !self.is_null()
+    }
 }
 
 pub fn from_bool(b: bool) -> Object {
