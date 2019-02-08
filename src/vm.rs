@@ -99,30 +99,41 @@ impl<'a> Vm<'a> {
                 Igte => self.logical_op(|x, y| x >= y)?,
                 Ilte => self.logical_op(|x, y| x <= y)?,
                 Isel(ct, cf) => {
-                    let c;
-                    if self.pop()?.to_bool() {
-                        c = ct;
-                    } else {
-                        c = cf;
-                    }
-                    self.dump.push(DumpEntry::Sel(self.code, self.pc+1));
-                    self.code = self.program.get(&c).unwrap();
-                    self.pc = 0;
+                    self.run_sel(ct, cf)?;
                     continue;
                 },
                 Ijoin => {
-                    match self.dump.pop().unwrap() {
-                        DumpEntry::Sel(code, pc) => {
-                            self.code = code;
-                            self.pc = pc;
-                            continue;
-                        },
-                        _ => unimplemented!()
-                    }
-                }
+                    self.run_join()?;
+                    continue;
+                },
                 _ => unimplemented!()
             }
             self.pc += 1;
+        }
+        Ok(())
+    }
+
+    fn run_sel(&mut self, ct: CodeAddr, cf: CodeAddr) -> Result<()> {
+        let c;
+        if self.pop()?.to_bool() {
+            c = ct;
+        } else {
+            c = cf;
+        }
+        self.dump.push(DumpEntry::Sel(self.code, self.pc+1));
+        self.code = self.program.get(&c).unwrap();
+        self.pc = 0;
+
+        Ok(())
+    }
+
+    fn run_join(&mut self) -> Result<()> {
+        match self.dump.pop().unwrap() {
+            DumpEntry::Sel(code, pc) => {
+                self.code = code;
+                self.pc = pc;
+            },
+            _ => unimplemented!()
         }
         Ok(())
     }
