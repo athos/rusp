@@ -58,6 +58,10 @@ impl<'a> Vm<'a> {
         self.binary_op(|x, y| Object::Number(op(x, y)))
     }
 
+    fn logical_op(&mut self, op: impl FnOnce(i32, i32) -> bool) -> Result<()> {
+        self.binary_op(|x, y| object::from_bool(op(x, y)))
+    }
+
     pub fn run(&mut self) -> Result<()> {
         while let Some(insn) = self.fetch_insn() {
             match insn {
@@ -80,6 +84,11 @@ impl<'a> Vm<'a> {
                 Isub => self.arith_op(std::ops::Sub::sub)?,
                 Imul => self.arith_op(std::ops::Mul::mul)?,
                 Idiv => self.arith_op(std::ops::Div::div)?,
+                Ieq  => self.logical_op(|x, y| x == y)?,
+                Igt  => self.logical_op(|x, y| x > y)?,
+                Ilt  => self.logical_op(|x, y| x < y)?,
+                Igte => self.logical_op(|x, y| x >= y)?,
+                Ilte => self.logical_op(|x, y| x <= y)?,
                 Isel(ct, cf) => {
                     let c;
                     if self.pop()?.to_bool() {
