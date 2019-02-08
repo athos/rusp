@@ -1,4 +1,5 @@
 use std::fmt;
+use std::result;
 use crate::insns::Code;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -9,6 +10,9 @@ pub enum Object {
     Symbol(String),
     Cons { car: Box<Object>, cdr: Box<Object> }
 }
+
+pub struct Error;
+pub type Result<T> = result::Result<T, Error>;
 
 fn write_list(f: &mut fmt::Formatter, obj: &Object) -> fmt::Result {
     match *obj {
@@ -56,6 +60,13 @@ impl Object {
 
     pub fn to_bool(&self) -> bool {
         !self.is_null()
+    }
+
+    pub fn to_number(&self) -> Result<i32> {
+        match *self {
+            Object::Number(n) => Ok(n),
+            _ => Err(Error)
+        }
     }
 }
 
