@@ -69,6 +69,22 @@ impl Object {
             _ => Err(Error)
         }
     }
+
+    pub fn car(&self) -> Result<Rc<Object>> {
+        match self {
+            &Object::Nil => Ok(Rc::new(Object::Nil)),
+            &Object::Cons(ref car, _) => Ok(car.clone()),
+            _ => Err(Error)
+        }
+    }
+
+    pub fn cdr(&self) -> Result<Rc<Object>> {
+        match self {
+            &Object::Nil => Ok(Rc::new(Object::Nil)),
+            &Object::Cons(_, ref cdr) => Ok(cdr.clone()),
+            _ => Err(Error)
+        }
+    }
 }
 
 pub fn from_bool(b: bool) -> Object {

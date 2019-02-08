@@ -81,6 +81,13 @@ impl<'a> Vm<'a> {
                     let y = self.pop()?;
                     self.push(Rc::new(object::cons(x, y)));
                 },
+                Icar => {
+                    let obj = self.pop()?;
+                    self.push(obj.car()?);
+                },
+                Icdr => {
+                    let obj = self.pop()?;
+                    self.push(obj.cdr()?);
                 },
                 Iadd => self.arith_op(std::ops::Add::add)?,
                 Isub => self.arith_op(std::ops::Sub::sub)?,
