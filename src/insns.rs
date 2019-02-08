@@ -1,9 +1,6 @@
-use std::collections::HashMap;
 use crate::object::Object;
 
 use std::rc::Rc;
-
-pub type CodeAddr = usize;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Insn {
@@ -24,9 +21,8 @@ pub enum Insn {
     Ilt,
     Igte,
     Ilte,
-    Isel(CodeAddr, CodeAddr),
+    Isel(Code, Code),
     Ijoin
 }
 
-pub type Code = Vec<Insn>;
-pub type Program = HashMap<CodeAddr, Code>;
+pub type Code = Rc<Vec<Insn>>;

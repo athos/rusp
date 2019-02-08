@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::mem;
 use std::rc::Rc;
 use std::result;
-use crate::insns::{Code, CodeAddr, Program};
-use crate::insns::Insn::{self, *};
+use crate::insns::{Code, Insn};
+use crate::insns::Insn::*;
 use crate::object::{self, Object};
 
 pub type Error = object::Error;
@@ -11,25 +11,23 @@ pub type Result<T> = result::Result<T, Error>;
 type Pc = usize;
 type Stack = Vec<Rc<Object>>;
 type Env = Vec<Object>;
-enum DumpEntry<'a> {
-    Sel(&'a Code, Pc),
-    Ap(Stack, Env, &'a Code, Pc)
+enum DumpEntry {
+    Sel(Code, Pc),
+    Ap(Stack, Env, Code, Pc)
 }
-type Dump<'a> = Vec<DumpEntry<'a>>;
+type Dump = Vec<DumpEntry>;
 
-pub struct Vm<'a> {
+pub struct Vm {
     stack: Stack,
     env: Env,
-    code: &'a Code,
-    dump: Dump<'a>,
-    pc: Pc,
-    program: &'a Program
+    code: Code,
+    dump: Dump,
+    pc: Pc
 }
 
-impl<'a> Vm<'a> {
-    pub fn new(program: &'a Program, entry_point: CodeAddr) -> Self {
-        let code = program.get(&entry_point).unwrap();
-        Vm { stack: vec![], env: vec![], code: code, dump: vec![], pc: 0, program }
+impl Vm {
+    pub fn new(code: Code) -> Self {
+        Vm { stack: vec![], env: vec![], code: code, dump: vec![], pc: 0 }
     }
 
     fn fetch_insn(&self) -> Option<Insn> {
@@ -113,15 +111,15 @@ impl<'a> Vm<'a> {
         Ok(())
     }
 
-    fn run_sel(&mut self, ct: CodeAddr, cf: CodeAddr) -> Result<()> {
-        let c;
+    fn run_sel(&mut self, ct: Code, cf: Code) -> Result<()> {
+        let mut c;
         if self.pop()?.to_bool() {
             c = ct;
         } else {
             c = cf;
         }
-        self.dump.push(DumpEntry::Sel(self.code, self.pc+1));
-        self.code = self.program.get(&c).unwrap();
+        mem::swap(&mut self.code, &mut c);
+        self.dump.push(DumpEntry::Sel(c, self.pc+1));
         self.pc = 0;
 
         Ok(())
@@ -141,24 +139,15 @@ impl<'a> Vm<'a> {
 
 #[test]
 fn vm_test() {
-    let program: Program = vec![
-        (0, vec![
-            Ildc(Rc::new(Object::Nil)),
-            Inull,
-            Isel(1, 2),
-            Ildc(Rc::new(Object::Number(3))),
-            Iadd
-        ]),
-        (1, vec![
-            Ildc(Rc::new(Object::Number(1))),
-            Ijoin
-        ]),
-        (2, vec![
-            Ildc(Rc::new(Object::Number(2))),
-            Ijoin
-        ])
-    ].iter().cloned().collect();
-    let mut vm = Vm::new(&program, 0);
+    let code = Rc::new(vec![
+        Ildc(Rc::new(Object::Nil)),
+        Inull,
+        Isel(Rc::new(vec![Ildc(Rc::new(Object::Number(1))), Ijoin]),
+             Rc::new(vec![Ildc(Rc::new(Object::Number(2))), Ijoin])),
+        Ildc(Rc::new(Object::Number(3))),
+        Iadd
+    ]);
+    let mut vm = Vm::new(code);
     vm.run();
     assert_eq!(vm.stack, vec![Rc::new(Object::Number(4))]);
 }
