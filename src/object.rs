@@ -1,4 +1,5 @@
 use std::fmt;
+use std::rc::Rc;
 use std::result;
 use crate::insns::Code;
 
@@ -8,7 +9,7 @@ pub enum Object {
     T,
     Number(i32),
     Symbol(String),
-    Cons { car: Box<Object>, cdr: Box<Object> }
+    Cons(Rc<Object>, Rc<Object>)
 }
 
 pub struct Error;
@@ -16,7 +17,7 @@ pub type Result<T> = result::Result<T, Error>;
 
 fn write_list(f: &mut fmt::Formatter, obj: &Object) -> fmt::Result {
     match *obj {
-        Object::Cons { ref car, ref cdr } => {
+        Object::Cons(ref car, ref cdr) => {
             write!(f, "{}", car);
             match **cdr {
                 Object::Nil => Ok(()),
@@ -37,7 +38,7 @@ impl fmt::Display for Object {
             Object::T => write!(f, "t"),
             Object::Number(ref num) => write!(f,"{}", num),
             Object::Symbol(ref sym) => write!(f, "{}", sym),
-            Object::Cons { .. } => {
+            Object::Cons(..) => {
                 write!(f, "(");
                 write_list(f, self)?;
                 write!(f, ")")
@@ -49,7 +50,7 @@ impl fmt::Display for Object {
 impl Object {
     pub fn is_atom(&self) -> bool {
         match self {
-            Object::Cons {..} | Object::Func {..} => false,
+            Object::Cons(..) => false,
             _ => true
         }
     }
@@ -82,6 +83,6 @@ pub fn symbol(name: &str) -> Object {
     Object::Symbol(name.to_string())
 }
 
-pub fn cons(car: Object, cdr: Object) -> Object {
-    Object::Cons { car: Box::new(car), cdr: Box::new(cdr) }
+pub fn cons(car: Rc<Object>, cdr: Rc<Object>) -> Object {
+    Object::Cons(car, cdr)
 }

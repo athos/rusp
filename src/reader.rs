@@ -1,6 +1,7 @@
 use std::char;
 use std::error;
 use std::fmt;
+use std::rc::Rc;
 use crate::object::Object;
 
 struct ReaderIterator<I: Iterator<Item = char>> {
@@ -117,10 +118,7 @@ impl <I: Iterator<Item = char>> ReaderIterator<I> {
             if c == ')' {
                 self.clear();
                 return elems.into_iter().rev().fold(Object::Nil, |acc, e| {
-                    Object::Cons {
-                        car: Box::new(e),
-                        cdr: Box::new(acc)
-                    }
+                    Object::Cons(Rc::new(e), Rc::new(acc))
                 })
             }
             elems.push(self.next().unwrap());
@@ -169,14 +167,14 @@ fn reader_test() {
     assert_eq!(read("nil"), Object::Nil);
     assert_eq!(read("-123"), Object::Number(-123));
     assert_eq!(read("hello-world!"), Object::Symbol("hello-world!".to_string()));
-    assert_eq!(read("(1 2 3)"), Object::Cons {
-        car: Box::new(Object::Number(1)),
-        cdr: Box::new(Object::Cons {
-            car: Box::new(Object::Number(2)),
-            cdr: Box::new(Object::Cons {
-                car: Box::new(Object::Number(3)),
-                cdr: Box::new(Object::Nil)
-            })
-        })
-    });
+    assert_eq!(read("(1 2 3)"), Object::Cons(
+        Rc::new(Object::Number(1)),
+        Rc::new(Object::Cons(
+            Rc::new(Object::Number(2)),
+            Rc::new(Object::Cons(
+                Rc::new(Object::Number(3)),
+                Rc::new(Object::Nil)
+            ))
+        ))
+    ));
 }

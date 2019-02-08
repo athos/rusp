@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 use crate::object::Object;
 
+use std::rc::Rc;
+
 pub type CodeAddr = usize;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Insn {
     Inil,
-    Ildc(Object),
+    Ildc(Rc<Object>),
     Ild(u32, u32),
     Iatom,
     Inull,
