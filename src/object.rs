@@ -18,11 +18,11 @@ pub type Result<T> = result::Result<T, Error>;
 fn write_list(f: &mut fmt::Formatter, obj: &Object) -> fmt::Result {
     match *obj {
         Object::Cons(ref car, ref cdr) => {
-            write!(f, "{}", car);
+            write!(f, "{}", car)?;
             match **cdr {
                 Object::Nil => Ok(()),
                 _ => {
-                    write!(f, " ");
+                    write!(f, " ")?;
                     write_list(f, cdr)
                 }
             }
@@ -39,7 +39,7 @@ impl fmt::Display for Object {
             Object::Number(ref num) => write!(f,"{}", num),
             Object::Symbol(ref sym) => write!(f, "{}", sym),
             Object::Cons(..) => {
-                write!(f, "(");
+                write!(f, "(")?;
                 write_list(f, self)?;
                 write!(f, ")")
             }
