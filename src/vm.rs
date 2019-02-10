@@ -73,24 +73,24 @@ impl Vm {
                 Iatom => {
                     let obj = self.pop()?;
                     self.push(Rc::new(object::from_bool(obj.is_atom())));
-                },
+                }
                 Inull => {
                     let obj = self.pop()?;
                     self.push(Rc::new(object::from_bool(obj.is_null())));
-                },
+                }
                 Icons => {
                     let x = self.pop()?;
                     let y = self.pop()?;
                     self.push(Rc::new(object::cons(x, y)));
-                },
+                }
                 Icar => {
                     let obj = self.pop()?;
                     self.push(obj.car()?);
-                },
+                }
                 Icdr => {
                     let obj = self.pop()?;
                     self.push(obj.cdr()?);
-                },
+                }
                 Iadd => self.arith_op(std::ops::Add::add)?,
                 Isub => self.arith_op(std::ops::Sub::sub)?,
                 Imul => self.arith_op(std::ops::Mul::mul)?,
@@ -103,7 +103,7 @@ impl Vm {
                 Isel(ct, cf) => {
                     self.run_sel(ct, cf)?;
                     continue;
-                },
+                }
                 Ijoin => self.run_join()?,
                 _ => unimplemented!()
             }
@@ -132,7 +132,7 @@ impl Vm {
                 self.code = code;
                 self.pc = pc;
                 Ok(())
-            },
+            }
             _ => Err(object::Error)
         }
     }

@@ -26,7 +26,7 @@ fn write_list(f: &mut fmt::Formatter, obj: &Object) -> fmt::Result {
                     write_list(f, cdr)
                 }
             }
-        },
+        }
         _ => write!(f, ". {}", obj)
     }
 }
