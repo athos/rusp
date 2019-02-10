@@ -104,3 +104,38 @@ pub fn symbol(name: &str) -> Object {
 pub fn cons(car: Rc<Object>, cdr: Rc<Object>) -> Object {
     Object::Cons(car, cdr)
 }
+
+pub fn list_to_vec(obj: Rc<Object>) -> Result<Vec<Rc<Object>>> {
+    let mut ret = Vec::new();
+    let mut obj = obj.as_ref();
+    loop {
+        match obj {
+            &Object::Nil => break,
+            &Object::Cons(ref car, ref cdr) => {
+                ret.push(car.clone());
+                obj = cdr.as_ref();
+            }
+            _ => return Err(Error)
+        }
+    }
+    Ok(ret)
+}
+
+#[test]
+fn list_to_vec_test() {
+    assert_eq!(list_to_vec(Rc::new(Object::Nil)).expect("must not happen"), vec![]);
+    assert_eq!(list_to_vec(Rc::new(Object::Cons(
+        Rc::new(Object::Number(1)),
+        Rc::new(Object::Cons(
+            Rc::new(Object::Number(2)),
+            Rc::new(Object::Cons(
+                Rc::new(Object::Number(3)),
+                Rc::new(Object::Nil)
+            ))
+        ))
+    ))).expect("must not happpen"), vec![
+        Rc::new(Object::Number(1)),
+        Rc::new(Object::Number(2)),
+        Rc::new(Object::Number(3))
+    ]);
+}
