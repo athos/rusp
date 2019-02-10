@@ -9,7 +9,8 @@ pub enum Object {
     T,
     Number(i32),
     Symbol(String),
-    Cons(Rc<Object>, Rc<Object>)
+    Cons(Rc<Object>, Rc<Object>),
+    Func(Code)
 }
 
 pub struct Error;
@@ -43,6 +44,7 @@ impl fmt::Display for Object {
                 write_list(f, self)?;
                 write!(f, ")")
             }
+            Object::Func(..) => write!(f, "#<func>")
         }
     }
 }
