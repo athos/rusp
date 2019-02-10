@@ -46,6 +46,10 @@ impl Vm {
         self.stack.pop().ok_or(object::Error)
     }
 
+    fn dump_pop(&mut self) -> Result<DumpEntry> {
+        self.dump.pop().ok_or(object::Error)
+    }
+
     fn binary_op(&mut self, op: impl FnOnce(i32, i32) -> Rc<Object>) -> Result<()> {
         let x = self.pop()?.to_number()?;
         let y = self.pop()?.to_number()?;
@@ -123,14 +127,14 @@ impl Vm {
     }
 
     fn run_join(&mut self) -> Result<()> {
-        match self.dump.pop().unwrap() {
+        match self.dump_pop()? {
             DumpEntry::Sel(code, pc) => {
                 self.code = code;
                 self.pc = pc;
+                Ok(())
             },
-            _ => unimplemented!()
+            _ => Err(object::Error)
         }
-        Ok(())
     }
 }
 
