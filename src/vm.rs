@@ -1,6 +1,7 @@
 use std::mem;
 use std::rc::Rc;
 use std::result;
+use crate::env;
 use crate::insns::{Code, Insn};
 use crate::insns::Insn::*;
 use crate::object::{self, Object};
@@ -10,7 +11,7 @@ pub type Result<T> = result::Result<T, Error>;
 
 type Pc = usize;
 type Stack = Vec<Rc<Object>>;
-type Env = Vec<Object>;
+type Env = Rc<env::Env>;
 enum DumpEntry {
     Sel(Code, Pc),
     Ap(Stack, Env, Code, Pc)
@@ -27,7 +28,11 @@ pub struct Vm {
 
 impl Vm {
     pub fn new(code: Code) -> Self {
-        Vm { stack: vec![], env: vec![], code: code, dump: vec![], pc: 0 }
+        Vm { stack: vec![],
+             env: Rc::new(env::Env::new()),
+             code: code,
+             dump: vec![],
+             pc: 0 }
     }
 
     fn fetch_insn(&self) -> Option<Insn> {
