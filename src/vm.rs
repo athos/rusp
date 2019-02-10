@@ -100,10 +100,7 @@ impl Vm {
                     self.run_sel(ct, cf)?;
                     continue;
                 },
-                Ijoin => {
-                    self.run_join()?;
-                    continue;
-                },
+                Ijoin => self.run_join()?,
                 _ => unimplemented!()
             }
             self.pc += 1;
@@ -119,7 +116,7 @@ impl Vm {
             c = cf;
         }
         mem::swap(&mut self.code, &mut c);
-        self.dump.push(DumpEntry::Sel(c, self.pc+1));
+        self.dump.push(DumpEntry::Sel(c, self.pc));
         self.pc = 0;
 
         Ok(())
