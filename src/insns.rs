@@ -22,7 +22,10 @@ pub enum Insn {
     Igte,
     Ilte,
     Isel(Code, Code),
-    Ijoin
+    Ijoin,
+    Ildf(Code),
+    Iap,
+    Irtn
 }
 
 pub type Code = Rc<Vec<Insn>>;

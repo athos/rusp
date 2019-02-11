@@ -110,6 +110,15 @@ impl Vm {
                     continue;
                 }
                 Ijoin => self.run_join()?,
+                Ildf(code) => {
+                    let obj = Object::Func(code.clone());
+                    self.push(Rc::new(obj));
+                }
+                Iap => {
+                    self.run_ap()?;
+                    continue;
+                }
+                Irtn => self.run_rtn()?,
                 _ => unimplemented!()
             }
             self.pc += 1;
@@ -141,19 +150,54 @@ impl Vm {
             _ => Err(object::Error)
         }
     }
+
+    fn run_ap(&mut self) -> Result<()> {
+        match *self.pop()? {
+            Object::Func(ref code) => {
+                let args = self.pop()?;
+                let frame = object::list_to_vec(args)?;
+                let stack = mem::replace(&mut self.stack, vec![]);
+                let new_env = env::push(self.env.clone(), frame);
+                let env = mem::replace(&mut self.env, Rc::new(new_env));
+                let code = mem::replace(&mut self.code, code.clone());
+                let entry = DumpEntry::Ap(stack, env, code, self.pc);
+                self.dump.push(entry);
+                self.pc = 0;
+                Ok(())
+            }
+            _ => Err(object::Error)
+        }
+    }
+
+    fn run_rtn(&mut self) -> Result<()> {
+        let v = self.pop()?;
+        match self.dump_pop()? {
+            DumpEntry::Ap(mut stack, env, code, pc) => {
+                stack.push(v);
+                self.stack = stack;
+                self.env = env;
+                self.code = code;
+                self.pc = pc;
+                Ok(())
+            }
+            _ => Err(object::Error)
+        }
+    }
 }
 
 #[test]
 fn vm_test() {
     let code = Rc::new(vec![
-        Ildc(Rc::new(Object::Nil)),
-        Inull,
-        Isel(Rc::new(vec![Ildc(Rc::new(Object::Number(1))), Ijoin]),
-             Rc::new(vec![Ildc(Rc::new(Object::Number(2))), Ijoin])),
-        Ildc(Rc::new(Object::Number(3))),
+        Inil,
+        Ildf(Rc::new(vec![
+            Ildc(Rc::new(Object::Number(1))),
+            Irtn
+        ])),
+        Iap,
+        Ildc(Rc::new(Object::Number(2))),
         Iadd
     ]);
     let mut vm = Vm::new(code);
     vm.run();
-    assert_eq!(vm.stack, vec![Rc::new(Object::Number(4))]);
+    assert_eq!(vm.stack, vec![Rc::new(Object::Number(3))]);
 }
