@@ -13,6 +13,7 @@ pub enum Object {
     Func(Code)
 }
 
+#[derive(Debug)]
 pub struct Error;
 pub type Result<T> = result::Result<T, Error>;
 
