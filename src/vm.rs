@@ -115,7 +115,8 @@ impl Vm {
                 }
                 Ijoin => self.run_join()?,
                 Ildf(code) => {
-                    let obj = Object::Func(code.clone());
+                    let env = self.env.clone();
+                    let obj = Object::Func(code.clone(), env);
                     self.push(Rc::new(obj));
                 }
                 Iap => {
@@ -156,11 +157,11 @@ impl Vm {
 
     fn run_ap(&mut self) -> Result<()> {
         match *self.pop()? {
-            Object::Func(ref code) => {
+            Object::Func(ref code, ref env) => {
                 let args = self.pop()?;
                 let frame = object::list_to_vec(args)?;
                 let stack = mem::replace(&mut self.stack, vec![]);
-                let new_env = env::push(self.env.clone(), frame);
+                let new_env = env::push(env.clone(), frame);
                 let env = mem::replace(&mut self.env, Rc::new(new_env));
                 let code = mem::replace(&mut self.code, code.clone());
                 let entry = DumpEntry::Ap(stack, env, code, self.pc);
@@ -192,21 +193,42 @@ impl Vm {
 fn vm_test() {
     let code = Rc::new(vec![
         Inil,
-        Ildc(Rc::new(Object::Number(3))),
-        Icons,
-        Ildc(Rc::new(Object::Number(2))),
-        Icons,
         Ildf(Rc::new(vec![
-            Ild((0, 0)),
-            Ild((0, 1)),
-            Imul,
+            Ildf(Rc::new(vec![
+                Inil,
+                Inil,
+                Ild((0, 0)),
+                Icons,
+                Ild((1, 0)),
+                Iap,
+                Icons,
+                Ild((1, 0)),
+                Iap,
+                Irtn
+            ])),
             Irtn
         ])),
-        Iap,
-        Ildc(Rc::new(Object::Number(1))),
-        Iadd
+        Icons,
+        Ildf(Rc::new(vec![
+            Inil,
+            Ildc(Rc::new(Object::Number(3))),
+            Icons,
+            Inil,
+            Ildf(Rc::new(vec![
+                Ild((0, 0)),
+                Ildc(Rc::new(Object::Number(2))),
+                Imul,
+                Irtn
+            ])),
+            Icons,
+            Ild((0, 0)),
+            Iap,
+            Iap,
+            Irtn
+        ])),
+        Iap
     ]);
     let mut vm = Vm::new(code);
-    vm.run().expect("must not happen");
-    assert_eq!(vm.stack, vec![Rc::new(Object::Number(7))]);
+    vm.run().expect("VM never fails");
+    assert_eq!(vm.stack, vec![Rc::new(Object::Number(12))]);
 }

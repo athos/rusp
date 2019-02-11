@@ -1,6 +1,7 @@
 use std::fmt;
 use std::rc::Rc;
 use std::result;
+use crate::env::Env;
 use crate::insns::Code;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -10,7 +11,7 @@ pub enum Object {
     Number(i32),
     Symbol(String),
     Cons(Rc<Object>, Rc<Object>),
-    Func(Code)
+    Func(Code, Rc<Env>)
 }
 
 #[derive(Debug)]
