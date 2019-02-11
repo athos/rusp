@@ -75,6 +75,10 @@ impl Vm {
             match insn {
                 Inil => self.push(Rc::new(Object::Nil)),
                 Ildc(obj) => self.push(obj.clone()),
+                Ild(loc) => {
+                    let obj = self.env.locate(loc)?;
+                    self.push(obj);
+                }
                 Iatom => {
                     let obj = self.pop()?;
                     self.push(Rc::new(object::from_bool(obj.is_atom())));
@@ -118,8 +122,7 @@ impl Vm {
                     self.run_ap()?;
                     continue;
                 }
-                Irtn => self.run_rtn()?,
-                _ => unimplemented!()
+                Irtn => self.run_rtn()?
             }
             self.pc += 1;
         }
@@ -189,15 +192,21 @@ impl Vm {
 fn vm_test() {
     let code = Rc::new(vec![
         Inil,
+        Ildc(Rc::new(Object::Number(3))),
+        Icons,
+        Ildc(Rc::new(Object::Number(2))),
+        Icons,
         Ildf(Rc::new(vec![
-            Ildc(Rc::new(Object::Number(1))),
+            Ild((0, 0)),
+            Ild((0, 1)),
+            Imul,
             Irtn
         ])),
         Iap,
-        Ildc(Rc::new(Object::Number(2))),
+        Ildc(Rc::new(Object::Number(1))),
         Iadd
     ]);
     let mut vm = Vm::new(code);
-    vm.run();
-    assert_eq!(vm.stack, vec![Rc::new(Object::Number(3))]);
+    vm.run().expect("must not happen");
+    assert_eq!(vm.stack, vec![Rc::new(Object::Number(7))]);
 }

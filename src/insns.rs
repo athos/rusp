@@ -1,4 +1,5 @@
 use crate::object::Object;
+use crate::env::Location;
 
 use std::rc::Rc;
 
@@ -6,7 +7,7 @@ use std::rc::Rc;
 pub enum Insn {
     Inil,
     Ildc(Rc<Object>),
-    Ild(u32, u32),
+    Ild(Location),
     Iatom,
     Inull,
     Icar,
