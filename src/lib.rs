@@ -1,4 +1,5 @@
 pub mod env;
+pub mod error;
 pub mod insns;
 pub mod object;
 pub mod reader;

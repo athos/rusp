@@ -2,11 +2,11 @@ use std::mem;
 use std::rc::Rc;
 use std::result;
 use crate::env;
+use crate::error::{Error, error};
 use crate::insns::{Code, Insn};
 use crate::insns::Insn::*;
 use crate::object::{self, Object};
 
-pub type Error = object::Error;
 pub type Result<T> = result::Result<T, Error>;
 
 type Pc = usize;
@@ -48,11 +48,11 @@ impl Vm {
     }
 
     fn pop(&mut self) -> Result<Rc<Object>> {
-        self.stack.pop().ok_or(object::Error)
+        self.stack.pop().ok_or(error("Stack underflow"))
     }
 
     fn dump_pop(&mut self) -> Result<DumpEntry> {
-        self.dump.pop().ok_or(object::Error)
+        self.dump.pop().ok_or(error("Dump stack underflow"))
     }
 
     fn binary_op(&mut self, op: impl FnOnce(i32, i32) -> Rc<Object>) -> Result<()> {
@@ -151,7 +151,7 @@ impl Vm {
                 self.pc = pc;
                 Ok(())
             }
-            _ => Err(object::Error)
+            _ => Err(error("Run into incoherent dump entry (ap)"))
         }
     }
 
@@ -169,7 +169,7 @@ impl Vm {
                 self.pc = 0;
                 Ok(())
             }
-            _ => Err(object::Error)
+            _ => Err(error("Can't apply object other than function"))
         }
     }
 
@@ -184,7 +184,7 @@ impl Vm {
                 self.pc = pc;
                 Ok(())
             }
-            _ => Err(object::Error)
+            _ => Err(error("Run into incoherent dump entry (sel)"))
         }
     }
 }

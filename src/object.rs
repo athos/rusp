@@ -2,6 +2,7 @@ use std::fmt;
 use std::rc::Rc;
 use std::result;
 use crate::env::Env;
+use crate::error::{Error, error};
 use crate::insns::Code;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -14,8 +15,6 @@ pub enum Object {
     Func(Code, Rc<Env>)
 }
 
-#[derive(Debug)]
-pub struct Error;
 pub type Result<T> = result::Result<T, Error>;
 
 fn write_list(f: &mut fmt::Formatter, obj: &Object) -> fmt::Result {
@@ -70,7 +69,7 @@ impl Object {
     pub fn to_number(&self) -> Result<i32> {
         match *self {
             Object::Number(n) => Ok(n),
-            _ => Err(Error)
+            _ => Err(error("Can't be converted to number"))
         }
     }
 
@@ -78,7 +77,7 @@ impl Object {
         match self {
             &Object::Nil => Ok(Rc::new(Object::Nil)),
             &Object::Cons(ref car, _) => Ok(car.clone()),
-            _ => Err(Error)
+            _ => Err(error("Can't be converted to cons"))
         }
     }
 
@@ -86,7 +85,7 @@ impl Object {
         match self {
             &Object::Nil => Ok(Rc::new(Object::Nil)),
             &Object::Cons(_, ref cdr) => Ok(cdr.clone()),
-            _ => Err(Error)
+            _ => Err(error("Can't be converted to cons"))
         }
     }
 }
@@ -117,7 +116,7 @@ pub fn list_to_vec(obj: Rc<Object>) -> Result<Vec<Rc<Object>>> {
                 ret.push(car.clone());
                 obj = cdr.as_ref();
             }
-            _ => return Err(Error)
+            _ => return Err(error("Can't be converted to cons"))
         }
     }
     Ok(ret)

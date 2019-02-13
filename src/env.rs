@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use std::result;
-use crate::object::{self, Object};
+use crate::error::{Error, error};
+use crate::object::Object;
 
 type Frame = Vec<Rc<Object>>;
 
@@ -12,7 +13,7 @@ pub enum Env {
 
 pub type Location = (usize, usize);
 
-pub type Result<T> = result::Result<T, object::Error>;
+pub type Result<T> = result::Result<T, Error>;
 
 impl Env {
     pub fn new() -> Self {
@@ -22,7 +23,7 @@ impl Env {
     pub fn pop(self) -> Result<Rc<Env>> {
         match self {
             Env::Frame(_, next) => Ok(next),
-            _ => Err(object::Error)
+            _ => Err(error("Env underflow"))
         }
     }
 
@@ -35,13 +36,13 @@ impl Env {
                     frame = Some(f);
                     env = next;
                 }
-                _ => return Err(object::Error)
+                _ => return Err(error("Illegal access to lexical environment"))
             }
         }
         if let Some(frame) = frame {
-            Ok(frame.get(j).ok_or(object::Error)?.clone())
+            Ok(frame.get(j).ok_or(error("Illegal access to lexical environment"))?.clone())
         } else {
-            Err(object::Error)
+            Err(error("Illegal access to lexical environment"))
         }
     }
 }

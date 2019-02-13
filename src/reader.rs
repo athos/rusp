@@ -1,29 +1,11 @@
 use std::char;
-use std::error;
-use std::fmt;
 use std::rc::Rc;
+use crate::error::{Error, error};
 use crate::object::Object;
 
 struct ReaderIterator<I: Iterator<Item = char>> {
     iter: I,
     peek: Option<char>
-}
-
-#[derive(Debug, Clone)]
-pub struct ReaderError {
-    message: String
-}
-
-impl fmt::Display for ReaderError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}", self.message)
-    }
-}
-
-impl error::Error for ReaderError {
-    fn description(&self) -> &str {
-        &self.message
-    }
 }
 
 impl <I: Iterator<Item = char>> ReaderIterator<I> {
