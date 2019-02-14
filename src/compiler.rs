@@ -3,7 +3,8 @@ use std::result;
 use crate::error::{Error, error};
 use crate::insns::{Code, Insn};
 use crate::insns::Insn::*;
-use crate::object::Object::{self, *};
+use crate::object::{self, Object};
+use crate::object::Object::*;
 
 pub type Result<T> = result::Result<T, Error>;
 
@@ -51,24 +52,18 @@ impl Compiler {
     }
 
     fn compile_binary_op(&mut self, args: &Object, insn: Insn) -> Result<()> {
-        match args {
-            Cons(x, cdr) => {
-                match cdr.as_ref() {
-                    Cons(y, cddr) => {
-                        match cddr.as_ref() {
-                            Nil => {
-                                self.compile(x)?;
-                                self.compile(y)?;
-                                self.insns.push(insn);
-                                Ok(())
-                            }
-                            _ => Err(error(""))
-                        }
-                    }
-                    _ => Err(error(""))
-                }
+        let args = object::list_to_vec(Rc::new(args.clone())).or_else(|_| {
+            Err(error("arglist must be proper list"))
+        })?;
+        match args.len() {
+            0 | 1 => Err(error("too less arguments")),
+            2 => {
+                self.compile(args[0].clone().as_ref())?;
+                self.compile(args[1].clone().as_ref())?;
+                self.insns.push(insn);
+                Ok(())
             }
-            _ => Err(error(""))
+            _ => Err(error("too many arguments"))
         }
     }
 }
