@@ -70,7 +70,7 @@ impl Vm {
         self.binary_op(|x, y| Rc::new(object::from_bool(op(x, y))))
     }
 
-    pub fn run(&mut self) -> Result<()> {
+    pub fn run(&mut self) -> Result<Rc<Object>> {
         while let Some(insn) = self.fetch_insn() {
             match insn {
                 Inil => self.push(Rc::new(Object::Nil)),
@@ -127,7 +127,7 @@ impl Vm {
             }
             self.pc += 1;
         }
-        Ok(())
+        Ok(self.pop().unwrap_or(Rc::new(Object::Nil)))
     }
 
     fn run_sel(&mut self, ct: Code, cf: Code) -> Result<()> {
@@ -229,6 +229,6 @@ fn vm_test() {
         Iap
     ]);
     let mut vm = Vm::new(code);
-    vm.run().expect("VM never fails");
-    assert_eq!(vm.stack, vec![Rc::new(Object::Number(12))]);
+    let v = vm.run().expect("VM never fails");
+    assert_eq!(v, Rc::new(Object::Number(12)));
 }
