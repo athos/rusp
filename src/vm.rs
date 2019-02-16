@@ -56,8 +56,8 @@ impl Vm {
     }
 
     fn binary_op(&mut self, op: impl FnOnce(i32, i32) -> Rc<Object>) -> Result<()> {
-        let x = self.pop()?.to_number()?;
         let y = self.pop()?.to_number()?;
+        let x = self.pop()?.to_number()?;
         self.push(op(x, y));
         Ok(())
     }
