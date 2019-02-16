@@ -34,15 +34,20 @@ impl Compiler {
         match car {
             Symbol(ref name) => {
                 match name.as_ref() {
-                    "+"  => self.compile_binary_op(cdr, Iadd)?,
-                    "-"  => self.compile_binary_op(cdr, Isub)?,
-                    "*"  => self.compile_binary_op(cdr, Imul)?,
-                    "/"  => self.compile_binary_op(cdr, Idiv)?,
-                    "="  => self.compile_binary_op(cdr, Ieq )?,
-                    "<"  => self.compile_binary_op(cdr, Ilt )?,
-                    ">"  => self.compile_binary_op(cdr, Igt )?,
-                    "<=" => self.compile_binary_op(cdr, Ilte)?,
-                    ">=" => self.compile_binary_op(cdr, Igte)?,
+                    "+"  => self.compile_op(2, cdr, Iadd)?,
+                    "-"  => self.compile_op(2, cdr, Isub)?,
+                    "*"  => self.compile_op(2, cdr, Imul)?,
+                    "/"  => self.compile_op(2, cdr, Idiv)?,
+                    "="  => self.compile_op(2, cdr, Ieq )?,
+                    "<"  => self.compile_op(2, cdr, Ilt )?,
+                    ">"  => self.compile_op(2, cdr, Igt )?,
+                    "<=" => self.compile_op(2, cdr, Ilte)?,
+                    ">=" => self.compile_op(2, cdr, Igte)?,
+                    "cons" => self.compile_op(2, cdr, Icons)?,
+                    "car"  => self.compile_op(1, cdr, Icar)?,
+                    "cdr"  => self.compile_op(1, cdr, Icdr)?,
+                    "null" => self.compile_op(1, cdr, Inull)?,
+                    "atom" => self.compile_op(1, cdr, Iatom)?,
                     _ => unimplemented!()
                 }
             }
@@ -51,20 +56,21 @@ impl Compiler {
         Ok(())
     }
 
-    fn compile_binary_op(&mut self, args: &Object, insn: Insn) -> Result<()> {
+    fn compile_op(&mut self, n: usize, args: &Object, insn: Insn) -> Result<()> {
         let args = object::list_to_vec(Rc::new(args.clone())).or_else(|_| {
             Err(error("arglist must be proper list"))
         })?;
-        match args.len() {
-            0 | 1 => Err(error("too less arguments")),
-            2 => {
-                self.compile(args[0].clone().as_ref())?;
-                self.compile(args[1].clone().as_ref())?;
-                self.insns.push(insn);
-                Ok(())
-            }
-            _ => Err(error("too many arguments"))
+        let nargs = args.len();
+        if nargs < n {
+            return Err(error("too less arguments"))
+        } else if nargs > n {
+            return Err(error("too many arguments"))
         }
+        for i in 0..n {
+            self.compile(args[i].as_ref())?;
+        }
+        self.insns.push(insn);
+        Ok(())
     }
 }
 
