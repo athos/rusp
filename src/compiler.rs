@@ -48,6 +48,7 @@ impl Compiler {
                     "cdr"  => self.compile_op(1, cdr, Icdr)?,
                     "null" => self.compile_op(1, cdr, Inull)?,
                     "atom" => self.compile_op(1, cdr, Iatom)?,
+                    "if" => self.compile_if(cdr)?,
                     _ => unimplemented!()
                 }
             }
@@ -56,7 +57,7 @@ impl Compiler {
         Ok(())
     }
 
-    fn compile_op(&mut self, n: usize, args: &Object, insn: Insn) -> Result<()> {
+    fn take_args(&self, n: usize, args: &Object) -> Result<Vec<Rc<Object>>> {
         let args = object::list_to_vec(Rc::new(args.clone())).or_else(|_| {
             Err(error("arglist must be proper list"))
         })?;
@@ -66,10 +67,24 @@ impl Compiler {
         } else if nargs > n {
             return Err(error("too many arguments"))
         }
+        Ok(args)
+    }
+
+    fn compile_op(&mut self, n: usize, args: &Object, insn: Insn) -> Result<()> {
+        let args = self.take_args(n, args)?;
         for i in 0..n {
             self.compile(args[i].as_ref())?;
         }
         self.insns.push(insn);
+        Ok(())
+    }
+
+    fn compile_if(&mut self, args: &Object) -> Result<()> {
+        let args = self.take_args(3, args)?;
+        self.compile(args[0].as_ref())?;
+        let then = compile(args[1].as_ref())?;
+        let otherwise = compile(args[2].as_ref())?;
+        self.insns.push(Isel(then, otherwise));
         Ok(())
     }
 }
