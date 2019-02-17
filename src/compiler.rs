@@ -50,10 +50,14 @@ impl Compiler {
                     "atom" => self.compile_op(1, cdr, Iatom)?,
                     "if" => self.compile_if(cdr)?,
                     "lambda" => self.compile_lambda(cdr)?,
-                    _ => unimplemented!()
+                    _ => self.compile_application(car, cdr)?
                 }
             }
-            _ => unimplemented!()
+            Nil | T | Number(_) => {
+                let msg = format!("{} is not applicable", *car);
+                return Err(error(&msg));
+            }
+            _ => self.compile_application(car, cdr)?
         }
         Ok(())
     }
@@ -94,6 +98,18 @@ impl Compiler {
         let _fn_args = object::list_to_vec(args[0].clone());
         let fn_body = compile(args[1].as_ref())?;
         self.insns.push(Ildf(fn_body));
+        Ok(())
+    }
+
+    fn compile_application(&mut self, func: &Object, args: &Object) -> Result<()> {
+        let args = object::list_to_vec(Rc::new(args.clone()))?;
+        self.insns.push(Inil);
+        for i in 1..args.len() {
+            self.compile(args[i].as_ref())?;
+            self.insns.push(Icons);
+        }
+        self.compile(func)?;
+        self.insns.push(Iap);
         Ok(())
     }
 }
