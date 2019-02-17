@@ -1,5 +1,7 @@
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::result;
+use crate::env::Location;
 use crate::error::{Error, error};
 use crate::insns::{Code, Insn};
 use crate::insns::Insn::*;
@@ -7,14 +9,30 @@ use crate::object::{self, Object};
 use crate::object::Object::*;
 
 pub type Result<T> = result::Result<T, Error>;
+type CEnv = HashMap<String, Location>;
 
+#[derive(Debug, Clone)]
 struct Compiler {
-    insns: Vec<Insn>
+    insns: Vec<Insn>,
+    cenv: CEnv,
+    level: usize
 }
 
 impl Compiler {
     fn new() -> Self {
-        Compiler { insns: Vec::new() }
+        Compiler {
+            insns: Vec::new(),
+            cenv: HashMap::new(),
+            level: 0
+        }
+    }
+
+    fn renew(&self) -> Self {
+        Compiler {
+            insns: Vec::new(),
+            cenv: self.cenv.clone(),
+            level: self.level
+        }
     }
 
     fn compile(&mut self, expr: &Object) -> Result<()> {
@@ -23,6 +41,13 @@ impl Compiler {
             T | Number(_) => {
                 let obj = expr.clone();
                 self.insns.push(Ildc(Rc::new(obj)));
+            }
+            Symbol(ref name) => {
+                let (i, j) = self.cenv.get(name).ok_or_else(|| {
+                    let msg = format!("unknown variable: {}", *name);
+                    error(&msg)
+                })?;
+                self.insns.push(Ild((self.level - i, *j)));
             }
             Cons(car, cdr) => self.compile_list(car, cdr)?,
             _ => unimplemented!()
@@ -87,17 +112,28 @@ impl Compiler {
     fn compile_if(&mut self, args: &Object) -> Result<()> {
         let args = self.take_args(3, args)?;
         self.compile(args[0].as_ref())?;
-        let then = compile(args[1].as_ref())?;
-        let otherwise = compile(args[2].as_ref())?;
-        self.insns.push(Isel(then, otherwise));
+        let mut c1 = self.renew();
+        c1.compile(args[1].as_ref())?;
+        let mut c2 = self.renew();
+        c2.compile(args[2].as_ref())?;
+        self.insns.push(Isel(Rc::new(c1.insns), Rc::new(c2.insns)));
         Ok(())
     }
 
     fn compile_lambda(&mut self, args: &Object) -> Result<()> {
         let args = self.take_args(2, args)?;
-        let _fn_args = object::list_to_vec(args[0].clone());
-        let fn_body = compile(args[1].as_ref())?;
-        self.insns.push(Ildf(fn_body));
+        let mut c = self.renew();
+        c.level += 1;
+        for (i, arg) in object::list_to_vec(args[0].clone())?.iter().enumerate() {
+            match arg.as_ref() {
+                Symbol(ref name) => {
+                    c.cenv.insert(name.to_owned(), (c.level, i));
+                }
+                _ => return Err(error("fn argument must be symbol"))
+            }
+        }
+        c.compile(args[1].as_ref())?;
+        self.insns.push(Ildf(Rc::new(c.insns)));
         Ok(())
     }
 
