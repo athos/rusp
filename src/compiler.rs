@@ -104,8 +104,8 @@ impl Compiler {
     fn compile_application(&mut self, func: &Object, args: &Object) -> Result<()> {
         let args = object::list_to_vec(Rc::new(args.clone()))?;
         self.insns.push(Inil);
-        for i in 1..args.len() {
-            self.compile(args[i].as_ref())?;
+        for arg in args.iter().rev() {
+            self.compile(arg.as_ref())?;
             self.insns.push(Icons);
         }
         self.compile(func)?;
