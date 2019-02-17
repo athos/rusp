@@ -73,8 +73,8 @@ impl Compiler {
 
     fn compile_op(&mut self, n: usize, args: &Object, insn: Insn) -> Result<()> {
         let args = self.take_args(n, args)?;
-        for i in 0..n {
-            self.compile(args[i].as_ref())?;
+        for arg in args {
+            self.compile(arg.as_ref())?;
         }
         self.insns.push(insn);
         Ok(())
