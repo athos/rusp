@@ -49,6 +49,7 @@ impl Compiler {
                     "null" => self.compile_op(1, cdr, Inull)?,
                     "atom" => self.compile_op(1, cdr, Iatom)?,
                     "if" => self.compile_if(cdr)?,
+                    "lambda" => self.compile_lambda(cdr)?,
                     _ => unimplemented!()
                 }
             }
@@ -85,6 +86,14 @@ impl Compiler {
         let then = compile(args[1].as_ref())?;
         let otherwise = compile(args[2].as_ref())?;
         self.insns.push(Isel(then, otherwise));
+        Ok(())
+    }
+
+    fn compile_lambda(&mut self, args: &Object) -> Result<()> {
+        let args = self.take_args(2, args)?;
+        let _fn_args = object::list_to_vec(args[0].clone());
+        let fn_body = compile(args[1].as_ref())?;
+        self.insns.push(Ildf(fn_body));
         Ok(())
     }
 }
