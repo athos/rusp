@@ -133,6 +133,7 @@ impl Compiler {
             }
         }
         c.compile(args[1].as_ref())?;
+        c.insns.push(Irtn);
         self.insns.push(Ildf(Rc::new(c.insns)));
         Ok(())
     }
