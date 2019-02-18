@@ -159,7 +159,7 @@ impl Vm {
         match *self.pop()? {
             Object::Func(ref code, ref env) => {
                 let args = self.pop()?;
-                let frame = object::list_to_vec(args)?;
+                let frame = object::list_to_vec(args.as_ref())?;
                 let stack = mem::replace(&mut self.stack, vec![]);
                 let new_env = env::push(env.clone(), frame);
                 let env = mem::replace(&mut self.env, Rc::new(new_env));

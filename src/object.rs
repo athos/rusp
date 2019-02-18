@@ -106,9 +106,8 @@ pub fn cons(car: Rc<Object>, cdr: Rc<Object>) -> Object {
     Object::Cons(car, cdr)
 }
 
-pub fn list_to_vec(obj: Rc<Object>) -> Result<Vec<Rc<Object>>> {
+pub fn list_to_vec(mut obj: &Object) -> Result<Vec<Rc<Object>>> {
     let mut ret = Vec::new();
-    let mut obj = obj.as_ref();
     loop {
         match obj {
             &Object::Nil => break,

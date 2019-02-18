@@ -88,7 +88,7 @@ impl Compiler {
     }
 
     fn take_args(&self, n: usize, args: &Object) -> Result<Vec<Rc<Object>>> {
-        let args = object::list_to_vec(Rc::new(args.clone())).or_else(|_| {
+        let args = object::list_to_vec(args).or_else(|_| {
             Err(error("arglist must be proper list"))
         })?;
         let nargs = args.len();
@@ -124,7 +124,7 @@ impl Compiler {
         let args = self.take_args(2, args)?;
         let mut c = self.renew();
         c.level += 1;
-        for (i, arg) in object::list_to_vec(args[0].clone())?.iter().enumerate() {
+        for (i, arg) in object::list_to_vec(args[0].as_ref())?.iter().enumerate() {
             match arg.as_ref() {
                 Symbol(ref name) => {
                     c.cenv.insert(name.to_owned(), (c.level, i));
@@ -139,7 +139,7 @@ impl Compiler {
     }
 
     fn compile_application(&mut self, func: &Object, args: &Object) -> Result<()> {
-        let args = object::list_to_vec(Rc::new(args.clone()))?;
+        let args = object::list_to_vec(args)?;
         self.insns.push(Inil);
         for arg in args.iter().rev() {
             self.compile(arg.as_ref())?;
